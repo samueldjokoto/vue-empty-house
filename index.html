@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0908">
+<title>EMPTY HOUSE — Vue Croydon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --ink: #0a0908; --ink-2: #14110f;
+    --paper: #f4ede4; --paper-dim: #c8bfb1; --paper-faint: #6b655c;
+    --amber: #e8a23a; --crimson: #c0392b; --green-empty: #4ade80;
+    --rule: rgba(244, 237, 228, 0.08);
+    --rule-strong: rgba(244, 237, 228, 0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--ink); color: var(--paper);
+    font-family: 'Fraunces', Georgia, serif;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    min-height: 100vh; min-height: 100dvh;
+  }
+
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    pointer-events: none; z-index: 100; opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+  }
+
+  body::after {
+    content: ''; position: fixed; inset: 0;
+    pointer-events: none; z-index: 1;
+    background: radial-gradient(ellipse at center, transparent 0%, transparent 60%, rgba(0,0,0,0.5) 100%);
+  }
+
+  .app {
+    position: relative; z-index: 2;
+    max-width: 720px; margin: 0 auto;
+    padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0) 0;
+  }
+
+  header { padding: 28px 22px 24px; border-bottom: 1px solid var(--rule-strong); }
+
+  .header-meta {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.2em;
+    color: var(--paper-faint); margin-bottom: 18px;
+  }
+
+  .header-meta .pulse { display: inline-flex; align-items: center; gap: 6px; }
+
+  .pulse-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--amber); animation: pulse 2s ease-in-out infinite;
+  }
+  .pulse-dot.live { background: var(--green-empty); }
+  .pulse-dot.error { background: var(--crimson); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 8px currentColor; }
+    50% { opacity: 0.4; box-shadow: 0 0 0 currentColor; }
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif; font-weight: 800;
+    font-size: clamp(40px, 11vw, 64px);
+    line-height: 0.92; letter-spacing: -0.04em;
+    font-variation-settings: "opsz" 144; margin-bottom: 8px;
+  }
+  h1 em { font-style: italic; color: var(--amber); font-weight: 300; }
+
+  .subtitle {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--paper-dim);
+  }
+
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .stat { padding: 18px 14px; border-right: 1px solid var(--rule); text-align: center; }
+  .stat:last-child { border-right: none; }
+  .stat-num {
+    font-family: 'JetBrains Mono', monospace; font-size: 28px;
+    font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .stat-num.accent { color: var(--green-empty); }
+  .stat-num.amber { color: var(--amber); }
+  .stat-label {
+    margin-top: 6px; font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; text-transform: uppercase;
+    letter-spacing: 0.18em; color: var(--paper-faint);
+  }
+
+  .filters {
+    display: flex; gap: 8px; padding: 16px 22px; overflow-x: auto;
+    border-bottom: 1px solid var(--rule); scrollbar-width: none;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+
+  .chip {
+    background: transparent; border: 1px solid var(--rule-strong);
+    color: var(--paper-dim); padding: 8px 14px; border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap;
+    cursor: pointer; transition: all 0.2s ease;
+  }
+  .chip:hover { border-color: var(--paper-dim); color: var(--paper); }
+  .chip.active { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+
+  .cinema-block { padding: 28px 0 8px; }
+  .cinema-header {
+    padding: 0 22px 14px;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .cinema-header .num {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--amber); letter-spacing: 0.15em;
+  }
+  .cinema-header h2 {
+    font-family: 'Fraunces', serif; font-weight: 400; font-style: italic;
+    font-size: 22px; letter-spacing: -0.01em;
+  }
+
+  .day-header {
+    padding: 14px 22px 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.2em;
+    color: var(--paper-faint);
+    border-top: 1px solid var(--rule);
+  }
+
+  .showing {
+    display: grid; grid-template-columns: 70px 1fr auto; gap: 14px;
+    padding: 18px 22px; border-top: 1px solid var(--rule);
+    align-items: start; text-decoration: none; color: inherit;
+    position: relative; transition: background 0.2s ease;
+  }
+  .showing:active { background: var(--ink-2); }
+
+  .showing.is-empty::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 2px; background: var(--green-empty);
+    box-shadow: 0 0 12px var(--green-empty);
+  }
+  .showing.is-low::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 2px; background: var(--amber);
+  }
+
+  .time {
+    font-family: 'JetBrains Mono', monospace; font-size: 16px;
+    font-weight: 600; letter-spacing: 0.05em; line-height: 1.3;
+  }
+  .time .end {
+    display: block; font-size: 9px; font-weight: 400;
+    color: var(--paper-faint); text-transform: uppercase;
+    letter-spacing: 0.18em; margin-top: 3px;
+  }
+
+  .film { min-width: 0; }
+  .film-title {
+    font-family: 'Fraunces', serif; font-weight: 600;
+    font-size: 16px; line-height: 1.25; letter-spacing: -0.01em;
+    margin-bottom: 4px; overflow-wrap: break-word;
+  }
+  .film-meta {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--paper-faint); text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .seats { text-align: right; font-family: 'JetBrains Mono', monospace; line-height: 1.2; }
+  .seats-num {
+    font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .showing.is-empty .seats-num { color: var(--green-empty); }
+  .showing.is-low .seats-num { color: var(--amber); }
+  .seats-label {
+    font-size: 8px; text-transform: uppercase; letter-spacing: 0.18em;
+    color: var(--paper-faint); margin-top: 2px;
+  }
+  .seats-total {
+    font-size: 9px; color: var(--paper-faint); margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .empty-state {
+    padding: 60px 22px; text-align: center; color: var(--paper-faint);
+  }
+  .empty-state .glyph {
+    font-family: 'Fraunces', serif; font-size: 64px; font-style: italic;
+    color: var(--rule-strong); margin-bottom: 16px; line-height: 1;
+  }
+  .empty-state p {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.15em; line-height: 1.6;
+  }
+
+  .controls {
+    padding: 24px 22px 40px;
+    border-top: 1px solid var(--rule-strong);
+    margin-top: 28px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .btn {
+    width: 100%; background: transparent; color: var(--paper);
+    border: 1px solid var(--rule-strong); padding: 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.2em;
+    cursor: pointer; transition: all 0.2s ease;
+    text-decoration: none; text-align: center; display: block;
+  }
+  .btn:hover { border-color: var(--amber); color: var(--amber); }
+  .btn.primary { border-color: var(--amber); color: var(--amber); }
+  .btn.primary:hover { background: var(--amber); color: var(--ink); }
+
+  .footer-note {
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.15em;
+    color: var(--paper-faint); text-align: center; line-height: 1.6;
+  }
+
+  .stagger > * { opacity: 0; animation: fadeUp 0.5s ease forwards; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.10s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.15s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.20s; }
+  .stagger > *:nth-child(n+5) { animation-delay: 0.25s; }
+
+  .spinner {
+    width: 24px; height: 24px;
+    border: 2px solid var(--rule-strong); border-top-color: var(--amber);
+    border-radius: 50%; margin: 0 auto 16px;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (min-width: 720px) {
+    header { padding: 40px 32px 32px; }
+    .filters { padding: 18px 32px; }
+    .cinema-header, .day-header { padding-left: 32px; padding-right: 32px; }
+    .showing { padding: 20px 32px; grid-template-columns: 90px 1fr auto; }
+    .controls { padding: 28px 32px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header>
+    <div class="header-meta">
+      <span class="pulse"><span class="pulse-dot" id="pulse"></span><span id="status-text">Loading</span></span>
+      <span id="last-updated">—</span>
+    </div>
+    <h1>Empty<br><em>House.</em></h1>
+    <div class="subtitle">Vue Croydon · Private intel · Auto-refresh every 2h</div>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num accent" id="stat-empty">—</div>
+      <div class="stat-label">Truly Empty</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num amber" id="stat-low">—</div>
+      <div class="stat-label">≤ 4 Seats</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="stat-total">—</div>
+      <div class="stat-label">Scanned</div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <button class="chip active" data-filter="empty-only">Empty Only</button>
+    <button class="chip" data-filter="low">≤ 4 Seats</button>
+    <button class="chip" data-filter="all">All Showings</button>
+    <button class="chip active" data-cinema="all">Both Cinemas</button>
+    <button class="chip" data-cinema="Croydon Purley Way">Purley Way</button>
+    <button class="chip" data-cinema="Croydon Grants">Grants</button>
+  </div>
+
+  <main id="listings">
+    <div class="empty-state">
+      <div class="spinner"></div>
+      <p>Loading scan results...</p>
+    </div>
+  </main>
+
+  <div class="controls">
+    <a class="btn primary" id="trigger-link" href="#" target="_blank" rel="noopener">
+      ▸ Trigger Fresh Scan
+    </a>
+    <button class="btn" id="reload-btn">Reload Data</button>
+    <div class="footer-note">
+      Auto-scrapes every 2 hours.<br>
+      Tap "Trigger Fresh Scan" for an instant update.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // =====================================================
+  // EDIT THESE TWO LINES AFTER CREATING YOUR GITHUB REPO
+  // =====================================================
+  const GITHUB_USER = "samueldjokoto";
+  const GITHUB_REPO = "vue-empty-house";
+  // =====================================================
+
+  // Use raw.githubusercontent.com for fast direct JSON fetching (no Pages cache lag)
+  const JSON_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/vue_results.json`;
+  const ACTIONS_URL = `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/actions/workflows/scrape.yml`;
+
+  document.getElementById('trigger-link').href = ACTIONS_URL;
+
+  let allSessions = [];
+  let activeFilter = 'empty-only';
+  let activeCinema = 'all';
+
+  const listings = document.getElementById('listings');
+  const statEmpty = document.getElementById('stat-empty');
+  const statLow = document.getElementById('stat-low');
+  const statTotal = document.getElementById('stat-total');
+  const statusText = document.getElementById('status-text');
+  const pulse = document.getElementById('pulse');
+  const lastUpdated = document.getElementById('last-updated');
+  const reloadBtn = document.getElementById('reload-btn');
+
+  async function fetchData() {
+    statusText.textContent = 'Loading';
+    pulse.className = 'pulse-dot';
+    listings.innerHTML = `<div class="empty-state"><div class="spinner"></div><p>Loading scan results...</p></div>`;
+
+    try {
+      const url = `${JSON_URL}?t=${Date.now()}`;
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+
+      const sessions = data.sessions || data.showings || (Array.isArray(data) ? data : []);
+      const scrapedAt = data.scraped_at || null;
+
+      allSessions = sessions.filter(s => s && typeof s === 'object');
+
+      if (scrapedAt) {
+        const dt = new Date(scrapedAt);
+        lastUpdated.textContent = dt.toLocaleString('en-GB', {
+          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+        });
+      }
+
+      statusText.textContent = 'Live';
+      pulse.className = 'pulse-dot live';
+      updateStats();
+      render();
+    } catch (err) {
+      statusText.textContent = 'Error';
+      pulse.className = 'pulse-dot error';
+      listings.innerHTML = `<div class="empty-state"><div class="glyph">!</div><p>Couldn't load data.<br><br>${escapeHtml(err.message)}<br><br>Has the scraper run yet?<br>Tap "Trigger Fresh Scan".</p></div>`;
+    }
+  }
+
+  function isValid(s) {
+    return typeof s.sold_seats === 'number' && typeof s.total_seats === 'number' && s.total_seats > 10;
+  }
+
+  function updateStats() {
+    const valid = allSessions.filter(isValid);
+    statEmpty.textContent = valid.filter(s => s.sold_seats === 0).length;
+    statLow.textContent = valid.filter(s => s.sold_seats <= 4).length;
+    statTotal.textContent = valid.length;
+  }
+
+  document.querySelectorAll('.chip[data-filter]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip[data-filter]').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      render();
+    });
+  });
+
+  document.querySelectorAll('.chip[data-cinema]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip[data-cinema]').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeCinema = chip.dataset.cinema;
+      render();
+    });
+  });
+
+  reloadBtn.addEventListener('click', fetchData);
+
+  function formatDay(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today.getTime() + 86400000);
+    const dOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (dOnly.getTime() === today.getTime()) return 'Today';
+    if (dOnly.getTime() === tomorrow.getTime()) return 'Tomorrow';
+    return d.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' });
+  }
+
+  function render() {
+    if (allSessions.length === 0) {
+      listings.innerHTML = `<div class="empty-state"><div class="glyph">∅</div><p>No data loaded yet</p></div>`;
+      return;
+    }
+
+    let filtered = allSessions.filter(isValid);
+    if (activeFilter === 'empty-only') filtered = filtered.filter(s => s.sold_seats === 0);
+    else if (activeFilter === 'low') filtered = filtered.filter(s => s.sold_seats <= 4);
+    if (activeCinema !== 'all') filtered = filtered.filter(s => s.cinema === activeCinema);
+
+    filtered.sort((a, b) => {
+      if (a.cinema !== b.cinema) return a.cinema.localeCompare(b.cinema);
+      const dateCmp = (a.date_str || '').localeCompare(b.date_str || '');
+      if (dateCmp !== 0) return dateCmp;
+      return (a.start_time || '').localeCompare(b.start_time || '');
+    });
+
+    if (filtered.length === 0) {
+      listings.innerHTML = `<div class="empty-state"><div class="glyph">·</div><p>No showings match.<br>Try widening the filter.</p></div>`;
+      return;
+    }
+
+    const byCinema = {};
+    for (const s of filtered) {
+      if (!byCinema[s.cinema]) byCinema[s.cinema] = {};
+      const dateKey = s.date_str || 'unknown';
+      if (!byCinema[s.cinema][dateKey]) byCinema[s.cinema][dateKey] = [];
+      byCinema[s.cinema][dateKey].push(s);
+    }
+
+    let html = '<div class="stagger">';
+    let blockNum = 1;
+    for (const [cinema, byDate] of Object.entries(byCinema)) {
+      html += `
+        <section class="cinema-block">
+          <div class="cinema-header">
+            <span class="num">${String(blockNum).padStart(2,'0')}</span>
+            <h2>${escapeHtml(cinema)}</h2>
+          </div>`;
+      for (const [dateKey, items] of Object.entries(byDate)) {
+        html += `<div class="day-header">${escapeHtml(formatDay(dateKey))}</div>`;
+        for (const s of items) html += showingHTML(s);
+      }
+      html += `</section>`;
+      blockNum++;
+    }
+    html += '</div>';
+    listings.innerHTML = html;
+  }
+
+  function showingHTML(s) {
+    const sold = s.sold_seats;
+    const total = s.total_seats;
+    const isEmpty = sold === 0;
+    const isLow = sold > 0 && sold <= 4;
+    const cls = isEmpty ? 'is-empty' : (isLow ? 'is-low' : '');
+
+    return `
+      <a class="showing ${cls}" href="${escapeHtml(s.booking_url)}" target="_blank" rel="noopener">
+        <div class="time">
+          ${escapeHtml(s.start_time || '?')}
+          ${s.end_time ? `<span class="end">→ ${escapeHtml(s.end_time)}</span>` : ''}
+        </div>
+        <div class="film">
+          <div class="film-title">${escapeHtml(s.film_title || 'Unknown')}</div>
+          <div class="film-meta">${escapeHtml(s.screen || '')}</div>
+        </div>
+        <div class="seats">
+          <div class="seats-num">${sold}</div>
+          <div class="seats-label">${isEmpty ? 'Empty' : 'Sold'}</div>
+          <div class="seats-total">/ ${total}</div>
+        </div>
+      </a>`;
+  }
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  fetchData();
+</script>
+
+</body>
+</html>
